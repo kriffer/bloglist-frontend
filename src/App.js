@@ -3,6 +3,9 @@ import Blog from './components/Blog'
 import blogService from './services/blogs'
 import loginService from './services/login'
 import Notification from './components/Notification'
+import LoginForm from './components/LoginForm'
+import NewBlogForm from './components/NewBlogForm'
+import Togglable from './components/Togglable'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -13,12 +16,13 @@ const App = () => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
+  const [newBlog, setNewBlog] = useState({})
 
   useEffect(() => {
     blogService.getAll().then(blogs =>
       setBlogs(blogs)
     )
-  }, [])
+  }, [newBlog])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogsAppUser')
@@ -54,6 +58,7 @@ const App = () => {
   const handleLogout = async (event) => {
     event.preventDefault()
     window.localStorage.removeItem('loggedBlogsAppUser')
+    blogService.setToken('')
     setUser(null)
   }
 
@@ -65,7 +70,8 @@ const App = () => {
       'url': url
     }
     try {
-      blogService.create(newBlog)
+      const response = blogService.create(newBlog)
+      setNewBlog(response)
       setBlogs(blogs.concat(newBlog))
       setMessage({ text: `A new blog ${newBlog.title} by ${newBlog.author} added`, type: 'success' })
       setTitle('')
@@ -81,74 +87,61 @@ const App = () => {
       }, 3000)
     }
   }
+
+  const addLikes = (id, blogToUpdate) => {
+    try {
+      blogService.update(id, blogToUpdate)
+
+    } catch (exception) {
+      setMessage({ text: 'Oops something went wrong', type: 'error' })
+    }
+  }
+
+  const removeBlog = (blog) => {
+    if (window.confirm(`Remove blog ${blog.title} by ${blog.author}?`)) {
+      try {
+        blogService.deleteBlog(blog.id)
+        setBlogs(blogs.filter(b => b.id !== blog.id))
+      } catch (exception) {
+        setMessage({ text: 'Oops something went wrong', type: 'error' })
+      }
+    }
+  }
+
+
   return (
     <div>
       <h2>blogs</h2>
       <Notification message={message} />
       {!user ?
-        <form onSubmit={handleLogin}>
-          <div>
-            username
-            <input
-              type="text"
-              value={username}
-              name="Username"
-              onChange={({ target }) => setUsername(target.value)}
-            />
-          </div>
-          <div>
-            password
-            <input
-              type="password"
-              value={password}
-              name="Password"
-              onChange={({ target }) => setPassword(target.value)}
-            />
-          </div>
-          <button type="submit">login</button>
-        </form>
+        <Togglable buttonLabel="log in">
+
+          <LoginForm username={username}
+            password={password}
+            handleUsernameChange={({ target }) => setUsername(target.value)}
+            handlePasswordChange={({ target }) => setPassword(target.value)}
+            handleSubmit={handleLogin}
+          />
+        </Togglable>
+
         :
         <div>
           <div>{user.name} is logged in <button onClick={handleLogout}>Logout</button></div>
-
-
-          <h3>create new</h3>
-          <div>
-            <form onSubmit={handleAddBlog}>
-              <div>
-                title
-                <input
-                  type="text"
-                  value={title}
-                  name="title"
-                  onChange={({ target }) => setTitle(target.value)}
-                />
-              </div>
-              <div>
-                author
-                <input
-                  type="text"
-                  value={author}
-                  name="author"
-                  onChange={({ target }) => setAuthor(target.value)}
-                />
-              </div>
-              <div>
-                url
-                <input
-                  type="text"
-                  value={url}
-                  name="url"
-                  onChange={({ target }) => setUrl(target.value)}
-                />
-              </div>
-              <button type="submit">create</button>
-            </form>
-          </div>
+          <Togglable buttonLabel="new blog">
+            <NewBlogForm
+              handleSubmit={handleAddBlog}
+              handleTitleChange={({ target }) => setTitle(target.value)}
+              handleAuthorChange={({ target }) => setAuthor(target.value)}
+              handleUrlChange={({ target }) => setUrl(target.value)}
+            />
+          </Togglable>
         </div>
       }
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
+      {blogs.sort((a, b) => {
+        return b.likes - a.likes;
+      }).map(blog => <div key={blog.id}>
+        <Blog blog={blog} updateBlog={addLikes} deleteBlog={removeBlog} user={user} />
+      </div>
       )}
     </div>
   )
