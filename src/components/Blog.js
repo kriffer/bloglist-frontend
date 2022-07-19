@@ -32,7 +32,7 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
 
   const handleClick = () => {
     setShowDetails(!showDetails)
-    !showDetails ? setLabel("hide") : setLabel("view")
+    !showDetails ? setLabel('hide') : setLabel('view')
   }
 
   const removeBlog = (e) => {
@@ -47,9 +47,9 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
   }
 
   return (
-    <div style={blogStyle}>
+    <div style={blogStyle} className='blog'>
       {blog.title} {blog.author} <button onClick={handleClick}>{label}</button>
-      {showDetails ? <div>
+      {showDetails ? <div className="togglableContent">
         <div>{blog.url}</div>
         <div>{likes} <button onClick={addLike}>like</button></div>
         <div>{blog.author}</div>
