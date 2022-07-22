@@ -35,7 +35,7 @@ const NewBlogForm = ({ handleSubmit, handleTitleChange, title, handleAuthorChang
               placeholder='url'
             />
           </div>
-          <button type="submit">create</button>
+          <button type="submit" id="create-blog-button">create</button>
         </form>
       </div>
     </div>
